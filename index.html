@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>מלך הטוזים</title>
+  <meta name="description" content="תבחר כלי, תרביץ, תאסוף טוזים. מי שמפיל אותו — מלך הטוזים.">
+  <meta name="theme-color" content="#0e0b08">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="מלך הטוזים">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
+  <link rel="icon" type="image/png" href="assets/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@400;700&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game" id="game">
+    <canvas id="stage" aria-label="הזירה — לחץ על הדמות כדי להרביץ"></canvas>
+
+    <header class="hud">
+      <div class="brand">
+        <svg class="brand__crown" viewBox="0 0 64 40" aria-hidden="true"><path d="M4 36 L8 6 L22 22 L32 2 L42 22 L56 6 L60 36 Z"/></svg>
+        <span class="brand__name">מלך הטוזים</span>
+      </div>
+
+      <div class="score" id="score" aria-live="polite">
+        <span class="score__num" id="scoreNum">0</span>
+        <span class="score__label">טוזים</span>
+      </div>
+
+      <button class="icon-btn" id="muteBtn" aria-label="השתק סאונד" aria-pressed="false">
+        <svg viewBox="0 0 24 24" class="ico-on" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none"/></svg>
+        <svg viewBox="0 0 24 24" class="ico-off" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6" fill="none"/></svg>
+      </button>
+
+      <div class="meter" role="meter" aria-label="כמה כוח נשאר לו" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" id="meter">
+        <div class="meter__track"><div class="meter__fill" id="meterFill"></div></div>
+        <div class="meter__caption"><span id="meterState">רענן כמו מלפפון</span><span id="meterPct">100%</span></div>
+      </div>
+    </header>
+
+    <nav class="toolbar" aria-label="ארגז כלים">
+      <div class="toolbar__scroller" id="toolbar" role="radiogroup" aria-label="בחר כלי"></div>
+    </nav>
+
+    <!-- מסך פתיחה -->
+    <section class="screen screen--intro is-open" id="intro" aria-labelledby="introTitle">
+      <div class="screen__card">
+        <div class="poster">
+          <img src="assets/icon-512.png" alt="" class="poster__face" width="512" height="512">
+        </div>
+        <p class="kicker">הזירה פתוחה</p>
+        <h1 class="title" id="introTitle">מלך<br>הטוזים</h1>
+        <p class="lede">בחר כלי מהארגז, תקתק עליו. כל מכה — טוז אחד. תפיל אותו ותקבל את הכתר.</p>
+        <button class="cta" id="startBtn">יאללה, לזירה</button>
+      </div>
+    </section>
+
+    <!-- מסך ניצחון -->
+    <section class="screen screen--win" id="win" aria-labelledby="winTitle" aria-hidden="true">
+      <div class="screen__card">
+        <p class="kicker">נוקאאוט</p>
+        <h2 class="title title--win" id="winTitle">כל הכבוד טוז!<br><em>ניצחת</em></h2>
+        <dl class="stats">
+          <div><dt>טוזים</dt><dd id="statHits">0</dd></div>
+          <div><dt>זמן</dt><dd id="statTime">0.0</dd></div>
+          <div><dt>כלי מוביל</dt><dd id="statTool">—</dd></div>
+        </dl>
+        <p class="record" id="statRecord"></p>
+        <div class="actions">
+          <button class="cta" id="againBtn">משחק חדש</button>
+          <button class="ghost" id="shareBtn">תשלח לחבר</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="install-hint" id="installHint" hidden>
+      <span>להוספה למסך הבית: לחץ על <b>שיתוף</b> ואז <b>הוסף למסך הבית</b></span>
+      <button class="install-hint__x" id="installX" aria-label="סגור">×</button>
+    </div>
+  </main>
+
+  <script src="tools.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
