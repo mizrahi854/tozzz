@@ -1,5 +1,5 @@
 // עובד גם בלי אינטרנט אחרי הביקור הראשון
-const CACHE = 'tooz-v1';
+const CACHE = 'tooz-v2';
 const CORE = ['./', 'index.html', 'style.css', 'tools.js', 'game.js', 'manifest.webmanifest',
   'assets/hero.png', 'assets/icon-180.png', 'assets/icon-192.png', 'assets/icon-512.png'];
 

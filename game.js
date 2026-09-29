@@ -1240,14 +1240,6 @@
 
   $('startBtn').addEventListener('click', () => { Sound.init(); newGame(); scheduleInstallHint(); });
   $('againBtn').addEventListener('click', () => { Sound.init(); newGame(); });
-  $('shareBtn').addEventListener('click', async () => {
-    const text = `הפלתי אותו ב-${state.hits} טוזים תוך ${$('statTime').textContent} שניות. בוא נראה אותך`;
-    const data = { title: 'מלך הטוזים', text, url: location.href };
-    try {
-      if (navigator.share) await navigator.share(data);
-      else { await navigator.clipboard.writeText(`${text}\n${location.href}`); $('shareBtn').textContent = 'הקישור הועתק'; }
-    } catch (e) {}
-  });
 
   const muteBtn = $('muteBtn');
   const syncMute = () => {
