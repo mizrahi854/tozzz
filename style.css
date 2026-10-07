@@ -361,3 +361,20 @@ button:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
   .title { font-size: clamp(72px, 22vw, 104px); }
   .poster { width: 110px; height: 110px; margin-bottom: 12px; }
 }
+
+/* אזור גרירת הדמות */
+.drop {
+  display: grid; gap: 4px; justify-items: center;
+  margin: 0 auto 14px; padding: 16px 18px; max-width: 30ch;
+  border: 3px dashed var(--yellow); color: var(--yellow);
+  background: rgba(255, 208, 0, .08); cursor: pointer; text-align: center;
+  transition: background 140ms, transform 140ms;
+}
+.drop[hidden] { display: none; }
+.drop b { font-weight: 800; font-size: 17px; }
+.drop span { font-size: 13px; opacity: .85; }
+.drop em { font-size: 12px; font-style: normal; opacity: .65; }
+.drop:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.drop.is-over { background: rgba(255, 208, 0, .22); transform: scale(1.03); }
+.drop-msg { min-height: 1.2em; margin: 0 0 10px; font-size: 13px; color: var(--yellow); }
+.cta:disabled { opacity: .4; filter: grayscale(.6); pointer-events: none; }

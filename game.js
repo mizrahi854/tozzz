@@ -4,8 +4,16 @@
   'use strict';
 
   // ---------- נתוני הדמות (בקואורדינטות של התמונה 345x1058) ----------
+  // ---- הגדרות הדמות (משנים רק כאן, בקוד) ----
+  // DEFAULT_HERO_SRC: נתיב לתמונה קבועה (למשל 'assets/hero.png'). אם מוגדר — אזור הגרירה לא מופיע בכלל.
+  // ALLOW_CHANGE: true = אזור הגרירה תמיד פתוח ואפשר להחליף. false = אחרי גרירה ראשונה הדמות ננעלת.
+  // כדי לאפס דמות שננעלה: להחליף את HERO_STORE_KEY לשם חדש, או למחוק נתוני אתר בדפדפן.
+  const DEFAULT_HERO_SRC = null;
+  const ALLOW_CHANGE = false;
+  const HERO_STORE_KEY = 'hero-v1';
+
+  // ---------- נתוני הדמות (בקואורדינטות של התמונה 345x1058, מחושבים אוטומטית מהתמונה שנגררה) ----------
   const HERO = {
-    src: 'assets/hero.png',
     w: 345, h: 1058,
     head: { x: 108, y: 0, w: 142, h: 216 },   // מלבן הראש (כולל צוואר)
     headCut: { x0: 110, x1: 248, y: 198, fade: 10 }, // מה נמחק מהגוף
@@ -158,7 +166,7 @@
   }
 
   // ---------- הכנת הדמות ----------
-  const heroImg = new Image();
+  let heroImg = null;          // קנבס הדמות אחרי עיבוד
   let heroData = null;          // RGBA בגודל התמונה המקורי
   let bodyBase, headBase, bodyOut, headOut, bodyLayer, headLayer;
 
@@ -778,8 +786,8 @@
         addMark({ type: skin || headHit ? 'scratch' : 'tear', part, x: ix, y: iy, rot: rnd(-0.5, 0.5) });
         break;
       case 'bump':
-        if (headHit && iy < 70) {
-          const bx = clamp(ix, 128, 228);
+        if (headHit && iy < HERO.head.y + (HERO.neck[1] - HERO.head.y) * 0.34) {
+          const bx = clamp(ix, HERO.head.x + HERO.head.w * 0.14, HERO.head.x + HERO.head.w * 0.85);
           addMark({ type: 'bump', part, x: bx, y: headTopAt(bx) + 3, r: rnd(13, 17) });
         } else if (headHit || skin) {
           addMark({ type: 'bruise', part, x: ix, y: iy, r: rnd(12, 16), rot: rnd(-1, 1), a: 0.9 });
@@ -799,10 +807,10 @@
     // פלסטרים בנקודות ציון
     if (state.bandages === 0 && dmgPct > 0.45) {
       state.bandages = 1;
-      addMark({ type: 'bandage', part: 'head', x: 205, y: 55, rot: 0.25 });
+      addMark({ type: 'bandage', part: 'head', x: HERO.head.x + HERO.head.w * 0.68, y: HERO.head.y + (HERO.neck[1] - HERO.head.y) * 0.27, rot: 0.25 });
     } else if (state.bandages === 1 && dmgPct > 0.75) {
       state.bandages = 2;
-      addMark({ type: 'bandage', part: 'head', x: 128, y: 150, rot: -0.3 });
+      addMark({ type: 'bandage', part: 'head', x: HERO.head.x + HERO.head.w * 0.14, y: HERO.head.y + (HERO.neck[1] - HERO.head.y) * 0.75, rot: -0.3 });
     }
 
     composePart('head');
@@ -1052,6 +1060,7 @@
     }
 
     // גוף
+    if (!bodyOut) return;
     const bm = base.multiply(bodyMatrix());
     ctx.setTransform(bm);
     ctx.imageSmoothingQuality = 'high';
@@ -1075,7 +1084,7 @@
   }
 
   function drawDizzy(t, dmgPct) {
-    const cx = 178, cy = -4, rx = 78, ry = 18;
+    const cx = HERO.neck[0], cy = HERO.head.y - 4, rx = HERO.head.w * 0.55, ry = 18;
     const n = state.phase === 'play' ? 3 : 5;
     const items = [];
     for (let i = 0; i < n; i++) {
@@ -1281,18 +1290,220 @@
     try { localStorage.setItem('tooz-hint', '1'); } catch (e) {}
   }
 
+  // ---------- טעינת הדמות: גרירה / בחירת קובץ, עיבוד אוטומטי ונעילה ----------
+  const dropEl = $('drop'), fileEl = $('heroFile'), dropMsg = $('dropMsg'), startBtn = $('startBtn'), posterImg = $('posterImg');
+  let heroLocked = false;
+
+  const HeroStore = {
+    open() {
+      return new Promise((res, rej) => {
+        const r = indexedDB.open('tooz-hero', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('kv');
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async get() {
+      try {
+        const db = await this.open();
+        return await new Promise((res) => {
+          const q = db.transaction('kv').objectStore('kv').get(HERO_STORE_KEY);
+          q.onsuccess = () => res(q.result || null);
+          q.onerror = () => res(null);
+        });
+      } catch (e) { return null; }
+    },
+    async put(blob) {
+      try {
+        const db = await this.open();
+        await new Promise((res, rej) => {
+          const tx = db.transaction('kv', 'readwrite');
+          tx.objectStore('kv').put(blob, HERO_STORE_KEY);
+          tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+        });
+        return true;
+      } catch (e) { return false; }
+    },
+  };
+
+  const loadImage = (src) => new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = () => rej(new Error('bad image'));
+    im.src = src;
+  });
+
+  // מסיר רקע אחיד (לבן/צבע פינה) אם התמונה לא שקופה, חותך לדמות ומציב אותה בקנבס 345x1058 עם הרגליים בתחתית
+  function fitHero(img) {
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    const k0 = Math.min(1, 1400 / Math.max(iw, ih));
+    const sw = Math.max(1, Math.round(iw * k0)), sh = Math.max(1, Math.round(ih * k0));
+    const src = document.createElement('canvas');
+    src.width = sw; src.height = sh;
+    const sg = src.getContext('2d', { willReadFrequently: true });
+    sg.drawImage(img, 0, 0, sw, sh);
+    const id = sg.getImageData(0, 0, sw, sh);
+    const d = id.data;
+
+    let transparentEdge = 0, edgeN = 0;
+    const edge = (x, y) => { edgeN++; if (d[(y * sw + x) * 4 + 3] < 200) transparentEdge++; };
+    for (let x = 0; x < sw; x += 4) { edge(x, 0); edge(x, sh - 1); }
+    for (let y = 0; y < sh; y += 4) { edge(0, y); edge(sw - 1, y); }
+    if (transparentEdge / edgeN < 0.5) {
+      const corners = [[0, 0], [sw - 1, 0], [0, sh - 1], [sw - 1, sh - 1]].map(([x, y]) => { const i = (y * sw + x) * 4; return [d[i], d[i + 1], d[i + 2]]; });
+      const bg = [0, 1, 2].map((c) => corners.reduce((a, p) => a + p[c], 0) / 4);
+      const tol = 46;
+      const near = (i) => Math.abs(d[i] - bg[0]) < tol && Math.abs(d[i + 1] - bg[1]) < tol && Math.abs(d[i + 2] - bg[2]) < tol;
+      const seen = new Uint8Array(sw * sh);
+      const stack = [];
+      const push = (x, y) => { const p = y * sw + x; if (!seen[p] && near(p * 4)) { seen[p] = 1; stack.push(p); } };
+      for (let x = 0; x < sw; x++) { push(x, 0); push(x, sh - 1); }
+      for (let y = 0; y < sh; y++) { push(0, y); push(sw - 1, y); }
+      while (stack.length) {
+        const p = stack.pop(), x = p % sw, y = (p / sw) | 0;
+        d[p * 4 + 3] = 0;
+        if (x > 0) push(x - 1, y);
+        if (x < sw - 1) push(x + 1, y);
+        if (y > 0) push(x, y - 1);
+        if (y < sh - 1) push(x, y + 1);
+      }
+      sg.putImageData(id, 0, 0);
+    }
+
+    let x0 = sw, x1 = -1, y0 = sh, y1 = -1;
+    for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) {
+      if (d[(y * sw + x) * 4 + 3] > 40) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (x1 < 0) throw new Error('empty');
+    const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+    const W0 = 345, H0 = 1058;
+    const k = Math.min((W0 - 6) / bw, (H0 - 4) / bh);
+    const dw = bw * k, dh = bh * k;
+    const out = document.createElement('canvas');
+    out.width = W0; out.height = H0;
+    const og = out.getContext('2d');
+    og.imageSmoothingQuality = 'high';
+    og.drawImage(src, x0, y0, bw, bh, (W0 - dw) / 2, H0 - dh, dw, dh);
+    return out;
+  }
+
+  // מאתר ראש, צוואר ועיניים מצללית הדמות ומעדכן את HERO
+  function analyzeHero(cv) {
+    const w = cv.width, h = cv.height;
+    const data = cv.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
+    const span = (y) => {
+      let a = -1, b = -1;
+      for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] > 60) { if (a < 0) a = x; b = x; }
+      return a < 0 ? null : [a, b];
+    };
+    let top = 0;
+    while (top < h - 1 && !span(top)) top++;
+    let bot = h - 1;
+    while (bot > top && !span(bot)) bot--;
+    const H = bot - top + 1;
+
+    // צוואר = השורה הכי צרה בין 10% ל-33% מגובה הדמות
+    let neckY = Math.round(top + H * 0.2), best = 1e9;
+    const lo = Math.round(top + H * 0.1), hi = Math.round(top + H * 0.33);
+    for (let y = lo; y <= hi; y++) {
+      let sum = 0, n = 0;
+      for (let dy = -3; dy <= 3; dy++) { const s = span(Math.min(h - 1, Math.max(0, y + dy))); if (s) { sum += s[1] - s[0]; n++; } }
+      const wv = n ? sum / n : 1e9;
+      if (wv < best) { best = wv; neckY = y; }
+    }
+    let hx0 = w, hx1 = 0;
+    for (let y = top; y <= neckY; y++) { const s = span(y); if (s) { hx0 = Math.min(hx0, s[0]); hx1 = Math.max(hx1, s[1]); } }
+    const ns = span(neckY) || [hx0, hx1];
+    hx0 = Math.max(0, hx0 - 6); hx1 = Math.min(w - 1, hx1 + 6);
+    const hy = Math.max(0, top - 2);
+    const hw = hx1 - hx0 + 1;
+    const hh0 = neckY - hy;
+    const cx = (hx0 + hx1) / 2;
+
+    HERO.w = w; HERO.h = h;
+    HERO.head = { x: hx0, y: hy, w: hw, h: Math.min(h - hy, hh0 + 11) };
+    HERO.headCut = { x0: hx0 + 2, x1: hx1 - 2, y: neckY - 7, fade: 10 };
+    HERO.headFade = { from: neckY - 7, to: neckY + 11 };
+    HERO.neck = [(ns[0] + ns[1]) / 2, neckY - 1];
+    HERO.eyeW = Math.max(9, hw * 0.12);
+    HERO.eyes = [[cx - hw * 0.14, hy + hh0 * 0.5], [cx + hw * 0.14, hy + hh0 * 0.49]];
+    HERO.face = [cx, hy + hh0 * 0.64];
+    const fs = span(bot - 4) || [w / 2 - 20, w / 2 + 20];
+    HERO.feet = [(fs[0] + fs[1]) / 2, h];
+  }
+
+  function useHero(cv) {
+    analyzeHero(cv);
+    heroImg = cv;
+    prepareHero();
+    try {
+      const hd = HERO.head, pc = document.createElement('canvas');
+      const side = Math.max(hd.w, hd.h - 8);
+      pc.width = pc.height = 256;
+      const pg = pc.getContext('2d');
+      pg.fillStyle = '#ffd000'; pg.fillRect(0, 0, 256, 256);
+      const s = 256 / side;
+      pg.drawImage(cv, hd.x, hd.y, hd.w, hd.h - 8, (256 - hd.w * s) / 2, 0, hd.w * s, (hd.h - 8) * s);
+      posterImg.src = pc.toDataURL('image/png');
+    } catch (e) {}
+    resize();
+  }
+
+  function lockUI(locked) {
+    heroLocked = locked && !ALLOW_CHANGE;
+    dropEl.hidden = heroLocked || !!DEFAULT_HERO_SRC;
+    startBtn.disabled = !heroImg;
+    document.body.classList.toggle('hero-locked', heroLocked);
+  }
+
+  async function acceptFile(file) {
+    if (heroLocked) return;
+    if (!file || !/^image\//.test(file.type)) { dropMsg.textContent = 'זה לא קובץ תמונה — נסה PNG או JPG'; return; }
+    dropMsg.textContent = 'מעבד את הדמות…';
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await loadImage(url);
+      const cv = fitHero(img);
+      useHero(cv);
+      const blob = await new Promise((res) => cv.toBlob(res, 'image/png'));
+      if (blob) await HeroStore.put(blob);
+      dropMsg.textContent = '';
+      lockUI(true);
+    } catch (e) {
+      dropMsg.textContent = 'לא הצלחתי לקרוא את התמונה — נסה קובץ אחר';
+    } finally { URL.revokeObjectURL(url); }
+  }
+
+  async function initHero() {
+    startBtn.disabled = true;
+    const stop = (e) => e.preventDefault();
+    ['dragenter', 'dragover'].forEach((ev) => window.addEventListener(ev, (e) => { stop(e); if (!heroLocked) dropEl.classList.add('is-over'); }));
+    ['dragleave', 'drop'].forEach((ev) => window.addEventListener(ev, (e) => { stop(e); dropEl.classList.remove('is-over'); }));
+    window.addEventListener('drop', (e) => { const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) acceptFile(f); });
+    dropEl.addEventListener('click', () => { if (!heroLocked) fileEl.click(); });
+    dropEl.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileEl.click(); } });
+    fileEl.addEventListener('change', () => { if (fileEl.files[0]) acceptFile(fileEl.files[0]); fileEl.value = ''; });
+
+    if (DEFAULT_HERO_SRC) {
+      try { useHero(fitHero(await loadImage(DEFAULT_HERO_SRC))); } catch (e) { dropMsg.textContent = 'לא נמצאה תמונת ברירת מחדל'; }
+      lockUI(true);
+      return;
+    }
+    const blob = ALLOW_CHANGE ? null : await HeroStore.get();
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      try { useHero(fitHero(await loadImage(url))); lockUI(true); } catch (e) { lockUI(false); }
+      URL.revokeObjectURL(url);
+    } else lockUI(false);
+  }
+
   // ---------- התחלה ----------
   buildToolbar();
   updateHud(false);
   window.addEventListener('resize', resize);
   window.addEventListener('orientationchange', () => setTimeout(resize, 200));
   resize();
-  heroImg.onload = () => {
-    prepareHero();
-    const go = () => { resize(); };
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(go); else go();
-  };
-  heroImg.src = HERO.src;
+  initHero();
   requestAnimationFrame(frame);
 
   if ('serviceWorker' in navigator && location.protocol === 'https:') {

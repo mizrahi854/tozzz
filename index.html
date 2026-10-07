@@ -52,12 +52,19 @@
     <section class="screen screen--intro is-open" id="intro" aria-labelledby="introTitle">
       <div class="screen__card">
         <div class="poster">
-          <img src="assets/icon-512.png" alt="" class="poster__face" width="512" height="512">
+          <img src="assets/icon-512.png" alt="" class="poster__face" id="posterImg" width="512" height="512">
         </div>
         <p class="kicker">הזירה פתוחה</p>
         <h1 class="title" id="introTitle">מלך<br>הטוזים</h1>
         <p class="lede">בחר כלי מהארגז, תקתק עליו. כל מכה — טוז אחד. תפיל אותו ותקבל את הכתר.</p>
-        <button class="cta" id="startBtn">יאללה, לזירה</button>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="גרור לכאן תמונת דמות או לחץ לבחירת קובץ">
+          <b>גרור לכאן את תמונת הדמות</b>
+          <span>או לחץ לבחירת קובץ · PNG שקוף הכי טוב</span>
+          <em>אחרי הגרירה הראשונה הדמות ננעלת</em>
+          <input type="file" id="heroFile" accept="image/*" hidden>
+        </div>
+        <p class="drop-msg" id="dropMsg" role="status"></p>
+        <button class="cta" id="startBtn" disabled>יאללה, לזירה</button>
       </div>
     </section>
 
