@@ -16,6 +16,8 @@
     face: [168, 132],
     feet: [150, 1058],                          // ציר הנפילה/נטייה
   };
+  // משפטי המכה — קופצים בכל פגיעה
+  const HIT_WORDS = ['טוזזז!', 'עביייי!', 'טוז עבייי!', 'טוזזז!', 'עביייי!', 'טוז עבייי!', 'אוי ואבוי!', 'די כבר!', 'וואי וואי!', 'חלאס!', 'לא לא לא!', 'מה עשיתי?!'];
   const OS = 2;          // רזולוציית הקנבסים הפנימיים (חדות סימנים)
   const MAX_HP = 170;
 
@@ -638,6 +640,7 @@
           tone('sawtooth', i % 2 ? 140 : 190, i % 2 ? 190 : 140, 0.08, 0.12, i * 0.08);
         }
       },
+      shatter() { noise('highpass', 3500, 6000, 0.8, 0.22, 0.9); [2400, 3100, 3900, 4700].forEach((f, i) => tone('triangle', f, f * 0.9, 0.15, 0.12, i * 0.03)); tone('sine', 180, 60, 0.12, 0.5); },
       splat() { noise('bandpass', 1600, 250, 1.5, 0.2, 0.9); tone('sine', 220, 70, 0.12, 0.4); },
       whoosh() { noise('bandpass', 350, 1500, 1.2, 0.16, 0.22); },
       bell() {
@@ -823,7 +826,7 @@
     shake = Math.max(shake, prefersReduced.matches ? 0 : 4 + t.pow * 2.6);
     flashes.push({ x: at.x, y: at.y, t: 0, r: 40 + t.pow * 16 });
     spawnImpactParticles(at, t, headHit);
-    const word = state.combo >= 4 && Math.random() < 0.6 ? `קומבו x${state.combo}` : pick(t.words);
+    const word = state.combo >= 4 && Math.random() < 0.6 ? `קומבו x${state.combo}` : (Math.random() < 0.75 ? pick(HIT_WORDS) : pick(t.words));
     addBurst(at.x + rnd(-10, 10), at.y - 30 - (big ? 10 : 0), word, false, big);
     Sound.play(t.sfx);
     if (Math.random() < 0.55 || big) Sound.grunt();
@@ -845,6 +848,12 @@
       for (let i = 0; i < 14; i++) {
         const a = rnd(-Math.PI, 0), s = rnd(120, 380);
         particles.push({ kind: 'dot', x: at.x, y: at.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, g: 1200, life: 0, max: rnd(0.4, 0.7), c: Math.random() < 0.5 ? '#ffc21a' : '#fffaf0', r: rnd(2, 5) });
+      }
+    }
+    if (t.id === 'vase') {
+      for (let i = 0; i < 22; i++) {
+        const a = rnd(-Math.PI, 0.3), s = rnd(140, 460);
+        particles.push({ kind: 'dot', x: at.x, y: at.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, g: 1300, life: 0, max: rnd(0.5, 0.9), c: Math.random() < 0.5 ? '#f4ede0' : '#2f7fd6', r: rnd(2.5, 5.5) });
       }
     }
     if (t.id === 'saw') {
@@ -1139,7 +1148,7 @@
         y = at.from[1] + (at.y - at.from[1]) * k - Math.sin(k * Math.PI) * layout.Hc * 0.18;
         rot = at.spin * u;
       } else {
-        if (tool.id === 'egg' && at.hit) { ctx.restore(); return; }
+        if ((tool.id === 'egg' || tool.id === 'vase') && at.hit) { ctx.restore(); return; }
         const d = u - it;
         x = at.x + at.vx * d;
         y = at.y + at.vy * d + 0.5 * 1600 * d * d;

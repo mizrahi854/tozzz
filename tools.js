@@ -70,6 +70,31 @@
       <path d="M44 44 C48 32 54 26 60 24" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
       <circle cx="80" cy="92" r="4" fill="#e3d4b6"/><circle cx="50" cy="96" r="3" fill="#e3d4b6"/>
     `),
+    chair: svg(`
+      <rect x="30" y="86" width="12" height="36" rx="3" fill="#7a4a24" ${S}/>
+      <rect x="86" y="86" width="12" height="36" rx="3" fill="#7a4a24" ${S}/>
+      <rect x="34" y="28" width="60" height="42" rx="8" fill="#b3202a" ${S}/>
+      <rect x="42" y="36" width="44" height="26" rx="5" fill="#d8404a"/>
+      <rect x="22" y="68" width="84" height="20" rx="6" fill="#8f1820" ${S}/>
+      <path d="M28 76 L100 76" stroke="#d8404a" stroke-width="3" stroke-linecap="round"/>
+      <path d="M42 28 L44 8 L55 19 L64 3 L73 19 L84 8 L86 28 Z" fill="#ffd000" ${S}/>
+      <circle cx="64" cy="16" r="3.5" fill="#d8262b"/>
+    `),
+    table: svg(`
+      <rect x="12" y="56" width="16" height="64" rx="4" fill="#7a4a24" ${S}/>
+      <rect x="100" y="56" width="16" height="64" rx="4" fill="#7a4a24" ${S}/>
+      <rect x="22" y="70" width="84" height="10" rx="3" fill="#5a3418" ${S}/>
+      <rect x="4" y="42" width="120" height="20" rx="6" fill="#c8864a" ${S}/>
+      <path d="M14 50 L110 50" stroke="#e8b27a" stroke-width="4" stroke-linecap="round"/>
+      <path d="M44 42 L46 18 L56 28 L64 12 L72 28 L82 18 L84 42 Z" fill="#ffd000" ${S}/>
+      <circle cx="64" cy="30" r="3.5" fill="#d8262b"/>
+    `),
+    vase: svg(`
+      <path d="M50 8 L78 8 C80 8 80 14 78 14 L76 14 C76 30 78 38 90 54 C104 72 100 108 84 118 C74 124 54 124 44 118 C28 108 24 72 38 54 C50 38 52 30 52 14 L50 14 C48 14 48 8 50 8 Z" fill="#f4ede0" ${S}/>
+      <path d="M36 66 C56 74 74 74 94 66 M34 88 C56 98 76 98 96 88" fill="none" stroke="#2f7fd6" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="64" cy="80" r="6" fill="#ffd000" stroke="${INK}" stroke-width="3"/>
+      <path d="M44 62 C42 76 42 90 48 104" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+    `),
   };
 
   // רמת כוח 1–5 (לתצוגה) ו-dmg אמיתי. כל מכה = טוז אחד, לא משנה הכלי.
@@ -83,6 +108,9 @@
     { id: 'hammer',   name: 'פטיש',   dmg: 8, pow: 5, anim: 'swing', impact: [16, 32], grip: [64, 118], rot: -40, size: .38, sfx: 'clank',  mark: 'bump',     words: ['טונק!', 'קלאנג!', 'טוז!'] },
     { id: 'saw',      name: 'מסור',   dmg: 8, pow: 5, anim: 'saw',   impact: [42, 86], grip: [104, 64], rot: 0,   size: .40, sfx: 'saw',    mark: 'scratch',  words: ['זזזזט!', 'ריצ\'!', 'אוי!'] },
     { id: 'egg',      name: 'ביצה',   dmg: 2, pow: 1, anim: 'throw', impact: [64, 64], grip: [64, 64],  rot: 0,   size: .18, sfx: 'splat',  mark: 'egg',      words: ['שפלאט!', 'איכס!', 'טוז!'] },
+    { id: 'chair',    name: 'כיסא כתר', dmg: 9, pow: 5, anim: 'swing', impact: [64, 40], grip: [36, 120], rot: 0, size: .42, sfx: 'clank', mark: 'bump', words: ['קראש!', 'טונק!', 'טוז!'] },
+    { id: 'table',    name: 'שולחן כתר', dmg: 11, pow: 5, anim: 'swing', impact: [100, 50], grip: [20, 118], rot: 0, size: .48, sfx: 'thud', mark: 'bump', words: ['בום!', 'דאנג!', 'טוז!'] },
+    { id: 'vase',     name: 'אגרטל', dmg: 6, pow: 3, anim: 'throw', impact: [64, 64], grip: [64, 64], rot: 0, size: .26, sfx: 'shatter', mark: 'bruise', words: ['קראש!', 'פראק!', 'טוז!'] },
   ];
 
   function rotPt([x, y], deg) {
